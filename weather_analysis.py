@@ -1,6 +1,7 @@
 import pandas as pd
+import sqlite3
 
-path="新しいフォルダー/kanagawa.xlsx"
+path="data/kanagawa.xlsx"
 
 df=pd.read_excel(path,header=3)
 df=df.iloc[2:]
@@ -10,8 +11,6 @@ df=df[["年月日",
        "最低気温(℃)",
        "平均気温(℃)",
        "降水量の合計(mm)"]]
-
-import sqlite3
 
 # ① SQLiteファイルに接続（なければ作られる）
 conn = sqlite3.connect("weather.db")
@@ -91,6 +90,10 @@ GROUP BY ym
 ORDER BY COUNT(*) DESC;
 """).fetchall()
 
-print(result5)
+print("平均気温の平均:", round(result1,2))
+print("月別平均気温:", result2)
+print("7日移動平均:", result3[:5])
+print("月平均との差:", result4[:5])
+print("平均との差が±3℃以上の日数:", result5)
 
 conn.close()
