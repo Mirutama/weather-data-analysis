@@ -1,24 +1,30 @@
-# Weather Data Analysis
-Python・pandas・SQLite・SQLを使った気象データ分析プロジェクトです。
+# Weather Data Analysis API
+気象庁の気象データを題材に、Pythonによるデータ処理から
+SQLiteへの保存、SQLによる分析、FastAPIによるAPI化までを実践した学習プロジェクトです。# Weather Data Analysis API
 
 ## 概要
 
-気象庁の気象データを使用し、横浜の気温データをpythonとpandasで前処理した後、SQLiteに保存し、SQLを使って気温の傾向を分析するプロジェクトです。
+気象庁から取得した横浜の気象データをpandasで前処理し、
+SQLiteに保存してSQLによる簡単な分析を行っています。
 
-主に以下の分析を行います。
+その後、バックエンド開発の学習としてFastAPIを追加し、
+SQLiteに保存した気象データをHTTP APIから取得できるようにしました。
 
-- 全期間の平均気温
-- 月別平均気温
-- 7日移動平均
-- 各日の平均気温と月平均気温の差
-- 月平均気温との差が±3℃以上となる日数
+データ分析そのものよりも、
+
+Excel → pandas → SQLite → SQL → FastAPI → JSON
+
+というデータ処理からWeb APIまでの一連の流れを理解することを主な目的としています。
 
 ## 使用技術
 
 - Python
 - pandas
+- FastAPI
+- Pydantic
 - SQLite
 - SQL
+- Git / GitHub
 
 ## データ
 
@@ -85,8 +91,31 @@ AVG("平均気温(℃)") OVER (
 
 全期間の平均気温は約7.97℃でした。
 
-## 考察
+## API
 
-2025年12月は月平均との差が±3℃以上の日が7日、2026年1月は6日でした。
+FastAPIを使用し、SQLiteに保存した気象データを取得するAPIを実装しています。
 
-今回のデータでは12月の方が該当日数は1日多い結果となりました。ただし、対象期間が2か月と短いため、長期的な気温変動の傾向を判断するには、より長期間のデータを用いた分析が必要です。
+### エンドポイント
+
+| Method | Endpoint | 内容 |
+| --- | --- | --- |
+| GET | `/weather/count` | 保存されているデータ件数を取得 |
+| GET | `/weather/{year}` | 指定した年の気象データを取得 |
+| GET | `/weather/{year}/{month}` | 指定した年月の気象データを取得 |
+
+`/weather/{year}/{month}` では以下のクエリパラメータを利用できます。
+
+- `limit`：取得件数を指定（1〜100、デフォルト10）
+- `min_temp`：指定した最高気温以上のデータに絞り込み
+
+また、Path / Queryによる入力値の検証、Pydanticによるレスポンスモデル、
+データが存在しない場合の404レスポンスを実装しています。
+
+## APIの実行
+
+```bash
+fastapi dev api.py
+```
+
+起動後、以下からSwagger UIを確認できます。
+http://127.0.0.1:8000/docs
