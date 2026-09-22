@@ -2,3 +2,4 @@ weather.db
 archive/
 venv/
 __pycache__/
+.env
