@@ -1,10 +1,14 @@
-import sqlite3
+import psycopg, os
 
+from datetime import date
+from dotenv import load_dotenv
 from fastapi import FastAPI, Path, Query, HTTPException
 from pydantic import BaseModel
 
+load_dotenv()
+
 class WeatherResponse(BaseModel):
-    date:str
+    date:date
     max_temperature:float
     min_temperature:float
     avg_temperature:float
@@ -13,7 +17,14 @@ class WeatherResponse(BaseModel):
 app = FastAPI()
 
 def get_db():
-    conn = sqlite3.connect("weather.db")
+
+    conn = psycopg.connect(
+    host=os.getenv("DB_HOST"),
+    port=os.getenv("DB_PORT"),
+    dbname=os.getenv("DB_NAME"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD")
+)
     return conn
 
 @app.get("/weather/count")
@@ -30,8 +41,8 @@ def get_weather_by_year(year: int):
 
     rows = conn.execute("""
     SELECT * FROM weather
-    WHERE strftime('%Y', 年月日) = ?
-    """,(str(year),)).fetchall()
+    WHERE EXTRACT(YEAR FROM "年月日") = %s
+    """,(year,)).fetchall()
 
     result = []
 
@@ -62,16 +73,16 @@ def get_year_and_month(
     
         sql = """
         SELECT * FROM weather
-        WHERE strftime('%Y', 年月日) = ?
-        AND strftime('%m', 年月日) = ?
+        WHERE EXTRACT(YEAR FROM "年月日") = %s
+        AND EXTRACT(MONTH FROM "年月日") = %s
         """
-        params =  (str(year), f"{month:02d}")
+        params =  (year, month)
 
         if min_temp is not None:
-            sql += 'AND "最高気温(℃)" >= ?\n '
+            sql += 'AND "最高気温(℃)" >= %s\n '
             params += (min_temp,)
 
-        sql += "LIMIT ?\n"
+        sql += "LIMIT %s\n"
         params += (limit,)
 
 
