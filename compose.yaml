@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+     POSTGRES_DB: ${DB_NAME}
+     POSTGRES_USER: ${DB_USER}
+     POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    volumes:
+     - postgres_data:/var/lib/postgresql/data
+     - ./weather_dump.sql:/docker-entrypoint-initdb.d/weather_dump.sql:ro
+
+  api:
+    build: .
+    ports:
+     - "8000:8000"
+    environment:
+     DB_HOST: db
+     DB_PORT: 5432
+     DB_NAME: ${DB_NAME}
+     DB_USER: ${DB_USER}
+     DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+     - db
+
+volumes:
+  postgres_data:

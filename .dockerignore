@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+.pytest_cache/
+archive/
+.env
+weather.db
+.git/
+data/
+weather_dump.sql

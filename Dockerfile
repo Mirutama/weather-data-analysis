@@ -1,0 +1,7 @@
+FROM python:3.13-slim
+WORKDIR /app
+COPY requirements.txt requirements-dev.txt ./
+RUN pip install --no-cache-dir -r requirements-dev.txt
+COPY . .
+
+CMD ["fastapi", "run", "api.py","--host", "0.0.0.0", "--port", "8000"]
