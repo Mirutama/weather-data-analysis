@@ -1,29 +1,35 @@
 # Weather Data Analysis API
-気象庁の気象データを題材に、Pythonによるデータ処理から
-SQLiteへの保存、SQLによる分析、FastAPIによるAPI化までを実践した学習プロジェクトです。# Weather Data Analysis API
+
+気象庁の気象データを題材に、Pythonによるデータ処理、SQLによる分析、
+FastAPIによるWeb API開発、PostgreSQLへのデータ保存、
+Docker Composeによるコンテナ環境の構築までを実践した学習プロジェクトです。
 
 ## 概要
 
 気象庁から取得した横浜の気象データをpandasで前処理し、
-SQLiteに保存してSQLによる簡単な分析を行っています。
+SQLによる簡単な分析を行っています。
 
-その後、バックエンド開発の学習としてFastAPIを追加し、
-SQLiteに保存した気象データをHTTP APIから取得できるようにしました。
+その後、バックエンド開発の学習としてFastAPIを使用したWeb APIを実装し、
+データベースをSQLiteからPostgreSQLへ移行しました。
 
-データ分析そのものよりも、
+さらにFastAPIとPostgreSQLをDockerコンテナ化し、
+Docker Composeを使用してAPIとデータベースをまとめて起動できる構成にしています。
 
-Excel → pandas → SQLite → SQL → FastAPI → JSON
-
-というデータ処理からWeb APIまでの一連の流れを理解することを主な目的としています。
+APIにはpytestによる自動テストを実装し、
+主要なエンドポイントやバリデーションの動作を確認しています。
 
 ## 使用技術
 
-- Python
+- Python 3.13
 - pandas
 - FastAPI
 - Pydantic
-- SQLite
+- PostgreSQL
 - SQL
+- psycopg
+- pytest
+- Docker
+- Docker Compose
 - Git / GitHub
 
 ## データ
@@ -44,13 +50,19 @@ Excel → pandas → SQLite → SQL → FastAPI → JSON
 
 ## 処理の流れ
 
-1. 気象データをExcelファイルからpandasで読み込む
-2. 不要な行を除外する
-3. 分析に必要な列を抽出する
-4. DataFrameをSQLiteの`weather`テーブルに保存する
-5. SQLを使って気温データを分析する
+1. 気象庁の気象データをExcelファイルからpandasで読み込む
+2. 不要な行を除外し、分析に必要な列を抽出・整形する
+3. SQLを使用して気温データを分析する
+4. 気象データをPostgreSQLの`weather`テーブルに保存する
+5. FastAPIからPostgreSQLへ接続し、気象データを取得する
+6. 取得したデータをJSON形式でHTTP APIから返す
+7. pytestでAPIのレスポンスやバリデーションをテストする
+8. FastAPIとPostgreSQLをDocker Composeでまとめて起動する
 
 ## 分析内容
+
+データ分析は、プロジェクト初期にSQLiteを使用して実装しました。
+その後、API開発を進める中でデータベースをPostgreSQLへ移行しています。
 
 ### 月別平均気温
 
@@ -93,7 +105,7 @@ AVG("平均気温(℃)") OVER (
 
 ## API
 
-FastAPIを使用し、SQLiteに保存した気象データを取得するAPIを実装しています。
+FastAPIを使用し、PostgreSQLに保存した気象データを取得するAPIを実装しています。
 
 ### エンドポイント
 
@@ -111,11 +123,53 @@ FastAPIを使用し、SQLiteに保存した気象データを取得するAPIを�
 また、Path / Queryによる入力値の検証、Pydanticによるレスポンスモデル、
 データが存在しない場合の404レスポンスを実装しています。
 
-## APIの実行
+## セットアップ
+
+### 1. リポジトリをクローン
 
 ```bash
-fastapi dev api.py
+git clone https://github.com/Mirutama/weather-data-analysis.git
+cd weather-data-analysis
 ```
 
-起動後、以下からSwagger UIを確認できます。
-http://127.0.0.1:8000/docs
+### 2. 環境変数を設定
+
+`.env.example`を参考に、プロジェクト直下に`.env`ファイルを作成します。
+
+```env
+DB_NAME=weather_db
+DB_USER=weather_user
+DB_PASSWORD=your_password
+```
+`DB_PASSWORD`には任意のパスワードを設定してください。
+
+`.env`はGitの管理対象外です。
+
+### 3. Docker Composeで起動
+
+```bash
+docker compose up --build
+```
+
+初回起動時にPostgreSQLのデータベースが作成され、
+`weather_dump.sql`から気象データが読み込まれます。
+
+起動後、Swagger UIからAPIの動作を確認できます。
+
+http://localhost:8000/docs
+
+## テスト
+
+APIコンテナ内でpytestを実行します。
+
+```bash
+docker compose exec api pytest
+```
+
+以下の項目をテストしています。
+
+- `/weather/count`が正常にデータ件数を返すこと
+- データが存在しない場合に404を返すこと
+- 不正な入力値に対して422を返すこと
+- `limit`で取得件数を制限できること
+- `min_temp`で最高気温を条件に絞り込めること
